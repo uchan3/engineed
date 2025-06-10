@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Engineed - Tech News Aggregator{% endblock %}</title>
+    <link href="{{ url_for('static', path='/css/style.css') }}" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">
+                <i class="fas fa-cogs"></i>
+                Engineed
+            </a>
+            <ul class="nav-menu">
+                <li><a href="/" class="nav-link">ホーム</a></li>
+                <li><a href="/tags" class="nav-link">タグ</a></li>
+                <li><a href="/stats" class="nav-link">統計</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2024 Engineed - AI-powered tech news aggregator</p>
+            <p>Built with FastAPI, Scrapy, and ❤️</p>
+        </div>
+    </footer>
+</body>
+</html>

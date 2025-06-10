@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} - Engineed{% endblock %}
+
+{% block content %}
+<div class="container">
+    <header class="page-header">
+        <h1><i class="fas fa-newspaper"></i> {{ page_title }}</h1>
+        <p class="subtitle">エンジニア向け技術記事アグリゲーター</p>
+        {% if total_articles > 0 %}
+        <div class="stats-summary">
+            <span class="stat-item">
+                <i class="fas fa-file-alt"></i>
+                総記事数: {{ total_articles }}
+            </span>
+        </div>
+        {% endif %}
+    </header>
+
+    {% if error %}
+    <div class="error-message">
+        <i class="fas fa-exclamation-triangle"></i>
+        エラー: {{ error }}
+    </div>
+    {% endif %}
+
+    {% if articles %}
+    <div class="articles-grid">
+        {% for article in articles %}
+        <article class="article-card">
+            <div class="article-header">
+                <h2 class="article-title">
+                    <a href="/article/{{ article.id }}">{{ article.title }}</a>
+                </h2>
+                <div class="article-meta">
+                    <span class="source">
+                        <i class="fas fa-globe"></i>
+                        {{ article.source_site }}
+                    </span>
+                    {% if article.author %}
+                    <span class="author">
+                        <i class="fas fa-user"></i>
+                        {{ article.author }}
+                    </span>
+                    {% endif %}
+                    {% if article.published_at %}
+                    <span class="date">
+                        <i class="fas fa-calendar"></i>
+                        {{ article.published_at.strftime('%Y/%m/%d') }}
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if article.summary %}
+            <div class="article-summary">
+                {{ article.summary[:200] }}...
+            </div>
+            {% elif article.content %}
+            <div class="article-summary">
+                {{ article.content[:200] }}...
+            </div>
+            {% endif %}
+
+            <div class="article-footer">
+                {% if article.tags %}
+                <div class="tags">
+                    {% for tag in article.tags[:5] %}
+                    <span class="tag">{{ tag.name }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <div class="article-stats">
+                    {% if article.reading_time %}
+                    <span class="reading-time">
+                        <i class="fas fa-clock"></i>
+                        {{ article.reading_time }}分
+                    </span>
+                    {% endif %}
+                    {% if article.like_count and article.like_count > 0 %}
+                    <span class="likes">
+                        <i class="fas fa-heart"></i>
+                        {{ article.like_count }}
+                    </span>
+                    {% endif %}
+                </div>
+
+                <div class="article-actions">
+                    <a href="{{ article.url }}" target="_blank" class="btn btn-primary">
+                        <i class="fas fa-external-link-alt"></i>
+                        元記事を読む
+                    </a>
+                </div>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-inbox"></i>
+        <h3>記事がまだありません</h3>
+        <p>スクレイピングを実行して記事を収集してください。</p>
+        <div class="action-buttons">
+            <a href="/stats" class="btn btn-secondary">統計を見る</a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

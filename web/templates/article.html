@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}{{ article.title }} - Engineed{% endblock %}
+
+{% block content %}
+<div class="container">
+    <article class="article-detail">
+        <header class="article-detail-header">
+            <h1 class="article-detail-title">{{ article.title }}</h1>
+            
+            <div class="article-detail-meta">
+                <div class="meta-row">
+                    <span class="source">
+                        <i class="fas fa-globe"></i>
+                        {{ article.source_site }}
+                    </span>
+                    {% if article.author %}
+                    <span class="author">
+                        <i class="fas fa-user"></i>
+                        {{ article.author }}
+                    </span>
+                    {% endif %}
+                    {% if article.published_at %}
+                    <span class="date">
+                        <i class="fas fa-calendar"></i>
+                        {{ article.published_at.strftime('%Y年%m月%d日') }}
+                    </span>
+                    {% endif %}
+                </div>
+                
+                <div class="meta-row">
+                    {% if article.reading_time %}
+                    <span class="reading-time">
+                        <i class="fas fa-clock"></i>
+                        読了時間: {{ article.reading_time }}分
+                    </span>
+                    {% endif %}
+                    {% if article.difficulty_level %}
+                    <span class="difficulty">
+                        <i class="fas fa-signal"></i>
+                        難易度: {{ article.difficulty_level }}/5
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if article.tags %}
+            <div class="article-tags">
+                {% for tag in article.tags %}
+                <span class="tag">{{ tag.name }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </header>
+
+        {% if article.summary %}
+        <section class="article-summary">
+            <h3><i class="fas fa-file-alt"></i> 要約</h3>
+            <p>{{ article.summary }}</p>
+        </section>
+        {% endif %}
+
+        {% if article.content %}
+        <section class="article-content">
+            <h3><i class="fas fa-align-left"></i> 内容プレビュー</h3>
+            <div class="content-preview">
+                {{ article.content[:1000] }}
+                {% if article.content|length > 1000 %}...{% endif %}
+            </div>
+        </section>
+        {% endif %}
+
+        <section class="article-stats">
+            <h3><i class="fas fa-chart-bar"></i> 統計情報</h3>
+            <div class="stats-grid">
+                {% if article.view_count %}
+                <div class="stat-item">
+                    <i class="fas fa-eye"></i>
+                    <span class="stat-label">閲覧数</span>
+                    <span class="stat-value">{{ article.view_count }}</span>
+                </div>
+                {% endif %}
+                {% if article.like_count %}
+                <div class="stat-item">
+                    <i class="fas fa-heart"></i>
+                    <span class="stat-label">いいね</span>
+                    <span class="stat-value">{{ article.like_count }}</span>
+                </div>
+                {% endif %}
+                {% if article.comment_count %}
+                <div class="stat-item">
+                    <i class="fas fa-comment"></i>
+                    <span class="stat-label">コメント</span>
+                    <span class="stat-value">{{ article.comment_count }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </section>
+
+        <div class="article-actions">
+            <a href="{{ article.url }}" target="_blank" class="btn btn-primary btn-large">
+                <i class="fas fa-external-link-alt"></i>
+                元記事を読む
+            </a>
+            <a href="/" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i>
+                記事一覧に戻る
+            </a>
+        </div>
+    </article>
+</div>
+{% endblock %}

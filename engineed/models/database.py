@@ -153,8 +153,13 @@ class ScrapingJob(Base):
     logs = Column(Text)
 
 # データベース接続
-def create_database(database_url="sqlite:///data/articles.db"):
-    engine = create_engine(database_url, echo=True)
+DATABASE_URL = "sqlite:///data/articles.db"
+engine = create_engine(DATABASE_URL, echo=False)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+def create_database(database_url=DATABASE_URL):
+    global engine, SessionLocal
+    engine = create_engine(database_url, echo=False)
     Base.metadata.create_all(engine)
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     return engine, SessionLocal
