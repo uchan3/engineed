@@ -18,12 +18,18 @@ python -m engineed.cli init-db  # Initialize SQLite database
 ### CLI Commands (via engineed.cli)
 ```bash
 # Run specific spider
-python -m engineed.cli crawl -s qiita
-python -m engineed.cli crawl -s zenn
-python -m engineed.cli crawl -s hateb
+python -m engineed.cli crawl -s qiita    # Qiita記事収集
+python -m engineed.cli crawl -s zenn     # Zenn記事収集
+python -m engineed.cli crawl -s hateb    # はてブ経由記事収集
+
+# Test mode (limited items, no pipelines)
+python -m engineed.cli crawl -s qiita --test
+python -m engineed.cli crawl -s zenn --test
+python -m engineed.cli crawl -s hateb --test
 
 # Run all spiders
 python -m engineed.cli crawl --all
+python -m engineed.cli crawl --all --test
 
 # Start web server
 python -m engineed.cli serve --host 127.0.0.1 --port 8000
@@ -35,18 +41,33 @@ python -m engineed.cli status
 ### Scrapy Commands
 ```bash
 # Run individual spiders directly
-scrapy crawl qiita
-scrapy crawl zenn
-scrapy crawl hateb
+scrapy crawl qiita    # Qiita技術記事
+scrapy crawl zenn     # Zenn技術記事
+scrapy crawl hateb    # はてなブックマーク経由
 
 # List available spiders
 scrapy list
+
+# Test run with limited items
+scrapy crawl qiita -s CLOSESPIDER_ITEMCOUNT=5 -s ITEM_PIPELINES="{}"
 ```
 
 ### Testing & Development
-The project structure suggests spiders should be in `engineed/spiders/` but they don't exist yet. When implementing:
-- Create `engineed/spiders/__init__.py`
-- Implement `qiita_spider.py`, `zenn_spider.py`, `hateb_spider.py` based on `base_spider.py` pattern
+```bash
+# Test all spiders functionality
+python test_all_spiders.py
+
+# Test individual spider logic
+python test_spider.py
+
+# Run minimal web test
+python test_minimal.py
+```
+
+All spiders are fully implemented:
+- `qiita_spider.py` - Qiita articles with real-world HTML parsing
+- `zenn_spider.py` - Zenn articles with modern web structure
+- `hateb_spider.py` - Hatena Bookmark tech entries with multi-site support
 
 ## Architecture
 
