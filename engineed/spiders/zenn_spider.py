@@ -6,39 +6,37 @@ from urllib.parse import urljoin
 from engineed.spiders.base_spider import BaseTechSpider
 
 
-class QiitaSpider(BaseTechSpider):
-    """Qiitaの記事を収集するSpider"""
+class ZennSpider(BaseTechSpider):
+    """Zennの記事を収集するSpider"""
     
-    name = 'qiita'
-    allowed_domains = ['qiita.com']
-    start_urls = ['https://qiita.com']
+    name = 'zenn'
+    allowed_domains = ['zenn.dev']
+    start_urls = ['https://zenn.dev']
     
     custom_settings = {
-        'DOWNLOAD_DELAY': 2,  # Qiitaは少し長めに設定
-        'RANDOMIZE_DOWNLOAD_DELAY': 1,
-        'CONCURRENT_REQUESTS_PER_DOMAIN': 2,
+        'DOWNLOAD_DELAY': 1.5,  # Zennは適度な間隔
+        'RANDOMIZE_DOWNLOAD_DELAY': 0.5,
+        'CONCURRENT_REQUESTS_PER_DOMAIN': 3,
     }
     
     def start_requests(self):
         """初期リクエストを生成"""
-        # 人気記事、新着記事、タグ別記事を取得
         urls = [
-            'https://qiita.com',  # トップページ
-            'https://qiita.com/popular-items',  # 人気記事
-            'https://qiita.com/items',  # 新着記事
+            'https://zenn.dev',  # トップページ
+            'https://zenn.dev/trending',  # トレンド記事
+            'https://zenn.dev/tech',  # Tech記事
         ]
         
-        # 主要技術タグ
-        tech_tags = [
-            'Python', 'JavaScript', 'React', 'Vue.js', 'Node.js',
-            'TypeScript', 'Go', 'Rust', 'Java', 'PHP',
-            'Docker', 'Kubernetes', 'AWS', 'GCP', 'Azure',
-            'MachineLearning', 'AI', 'DeepLearning', 'DataScience',
-            'WebDevelopment', 'Frontend', 'Backend', 'DevOps'
+        # 主要技術トピック
+        tech_topics = [
+            'python', 'javascript', 'react', 'vue', 'nodejs',
+            'typescript', 'go', 'rust', 'java', 'php',
+            'docker', 'kubernetes', 'aws', 'gcp', 'azure',
+            'ai', 'ml', 'web', 'frontend', 'backend', 'devops'
         ]
         
-        for tag in tech_tags:
-            urls.append(f'https://qiita.com/tags/{tag}/items')
+        for topic in tech_topics:
+            urls.append(f'https://zenn.dev/topics/{topic}')
         
         for url in urls:
             yield scrapy.Request(
@@ -49,21 +47,21 @@ class QiitaSpider(BaseTechSpider):
     
     def parse(self, response):
         """記事一覧ページのパース"""
-        # Qiitaの実際のHTML構造に合わせて記事リンクを抽出
+        # Zennの実際のHTML構造に合わせて記事リンクを抽出
         article_selectors = [
-            'article h2 a::attr(href)',  # 記事タイトルリンク
-            '.css-1k6ikq9 a::attr(href)',  # トップページの記事
-            '.css-u6dbcd a::attr(href)',  # リスト形式の記事
-            'h1 a[href*="/items/"]::attr(href)',  # 一般的な記事リンク
-            'a[href*="/items/"]::attr(href)',  # 記事URLパターンマッチ
+            'article a[href*="/articles/"]::attr(href)',  # 記事リンク
+            '.ArticleListItem_title a::attr(href)',  # 記事タイトルリンク
+            'a[href*="/articles/"]::attr(href)',  # 記事URLパターンマッチ
+            '.css-1wl4jvr a::attr(href)',  # 記事カード
         ]
         
         article_links = []
         for selector in article_selectors:
             links = response.css(selector).getall()
             if links:
-                article_links.extend(links)
-                break
+                # Zennの記事URLフィルタ
+                filtered_links = [link for link in links if '/articles/' in link and len(link.split('/')) >= 4]
+                article_links.extend(filtered_links)
         
         # 重複除去
         article_links = list(set(article_links))
@@ -71,22 +69,22 @@ class QiitaSpider(BaseTechSpider):
         self.logger.info(f'Found {len(article_links)} article links on {response.url}')
         
         # 各記事ページにリクエスト
-        for link in article_links[:10]:  # 最初の10件に制限
+        for link in article_links[:12]:  # 最初の12件に制限
             article_url = urljoin(response.url, link)
-            if self.should_follow_link(article_url) and '/items/' in article_url:
+            if self.should_follow_link(article_url):
                 yield scrapy.Request(
                     url=article_url,
                     callback=self.parse_article,
                     errback=self.handle_error
                 )
         
-        # ページネーション（最大ページ数まで）
+        # ページネーション
         current_page = response.meta.get('page', 1)
         if current_page < self.max_pages:
             next_selectors = [
                 'a[rel="next"]::attr(href)',
-                '.css-1t6wm19 a::attr(href)',  # ページネーション
                 'a[aria-label="次のページ"]::attr(href)',
+                '.Pagination_next a::attr(href)',
             ]
             
             next_url = None
@@ -106,10 +104,11 @@ class QiitaSpider(BaseTechSpider):
     def parse_article(self, response):
         """個別記事のパース"""
         try:
-            # タイトル取得（Qiitaの実際の構造）
+            # タイトル取得
             title_selectors = [
-                'h1[data-cy="article-title"]::text',
-                '.css-19ak7s2::text',  # 新しいデザイン
+                'h1.ArticleHeader_title::text',
+                'h1[data-testid="article-title"]::text',
+                '.css-1wl4jvr h1::text',
                 'h1::text',
                 'title::text',
             ]
@@ -124,10 +123,10 @@ class QiitaSpider(BaseTechSpider):
             
             # 作者取得
             author_selectors = [
-                '.css-1t6wm19 a::text',  # プロフィールリンク
+                '.ArticleHeader_authorInfo a::text',
                 'a[href*="/users/"]::text',
-                '.user-info a::text',
-                '[data-cy="author-link"]::text',
+                '.UserLink_displayName::text',
+                '.css-1wl4jvr a[href*="/users/"]::text',
             ]
             
             author = None
@@ -140,8 +139,8 @@ class QiitaSpider(BaseTechSpider):
             published_at = None
             date_selectors = [
                 'time::attr(datetime)',
-                '[data-cy="created-at"]::attr(datetime)',
-                '.css-1t6wm19 time::attr(datetime)',
+                '.ArticleHeader_publishedAt time::attr(datetime)',
+                '[data-testid="published-at"]::attr(datetime)',
             ]
             
             for selector in date_selectors:
@@ -157,11 +156,11 @@ class QiitaSpider(BaseTechSpider):
             
             # 記事本文取得
             content_selectors = [
-                '.markdown-body',  # メインコンテンツ
-                '[data-cy="article-body"]',
-                '.css-1t6wm19 .markdown',
+                '.ArticleBody_content',
+                '.zenn-markdown',
+                '[data-testid="article-body"]',
+                '.markdown-body',
                 'article .content',
-                '.post-content',
             ]
             
             content = ''
@@ -171,10 +170,9 @@ class QiitaSpider(BaseTechSpider):
                     content = content_elements.get()
                     break
             
-            # contentが見つからない場合は本文全体から抽出
             if not content:
-                content = response.css('body').get()
-                self.logger.warning(f'Using body content for {response.url}')
+                content = response.css('main').get()
+                self.logger.warning(f'Using main content for {response.url}')
             
             if not content:
                 self.logger.warning(f'No content found for {response.url}')
@@ -185,12 +183,12 @@ class QiitaSpider(BaseTechSpider):
             like_count = 0
             comment_count = 0
             
-            # いいね数の取得（複数のパターンを試行）
+            # いいね数の取得
             like_selectors = [
-                '.css-1t6wm19 button span::text',
-                '[data-cy="like-count"]::text',
-                '.like-count::text',
+                '.ArticleHeader_likeCount::text',
                 'button[aria-label*="いいね"] span::text',
+                '.LikeButton_count::text',
+                '[data-testid="like-count"]::text',
             ]
             
             for selector in like_selectors:
@@ -204,10 +202,10 @@ class QiitaSpider(BaseTechSpider):
             
             # タグ取得
             tag_selectors = [
-                '.css-1t6wm19 a[href*="/tags/"]::text',
-                '[data-cy="tag"]::text',
-                '.tag::text',
-                'a[href*="/tags/"] span::text',
+                '.ArticleHeader_topics a::text',
+                'a[href*="/topics/"]::text',
+                '.TopicBadge_name::text',
+                '[data-testid="topic"] span::text',
             ]
             
             tags = []
@@ -219,7 +217,7 @@ class QiitaSpider(BaseTechSpider):
             
             # 記事の種類判定
             is_tutorial = any(keyword in title.lower() for keyword in 
-                            ['チュートリアル', 'tutorial', '入門', '初心者', 'はじめて', '使い方'])
+                            ['チュートリアル', 'tutorial', '入門', '初心者', 'はじめて', '使い方', '基礎'])
             
             # ArticleItemを作成
             item = self.create_article_item(
@@ -253,28 +251,27 @@ class QiitaSpider(BaseTechSpider):
         self.logger.error(f'Request failed: {failure.request.url} - {failure.value}')
     
     def should_follow_link(self, url):
-        """Qiita固有のリンクフィルタリング"""
+        """Zenn固有のリンクフィルタリング"""
         if not super().should_follow_link(url):
             return False
         
-        # Qiita固有の除外パターン
-        qiita_exclude_patterns = [
-            r'/organizations/',
-            r'/advent-calendar/',
-            r'/drafts/',
-            r'/private/',
+        # Zenn固有の除外パターン
+        zenn_exclude_patterns = [
+            r'/users/',
+            r'/books/',
+            r'/scraps/',
             r'/following',
             r'/followers',
             r'/likes',
-            r'/stocks',
+            r'/drafts',
         ]
         
-        for pattern in qiita_exclude_patterns:
+        for pattern in zenn_exclude_patterns:
             if re.search(pattern, url, re.IGNORECASE):
                 return False
         
         # 記事URLのパターンチェック
-        if '/items/' in url:
+        if '/articles/' in url:
             return True
         
         return False

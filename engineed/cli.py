@@ -9,20 +9,32 @@ def main():
     pass
 
 @main.command()
-@click.option('--spider', '-s', help='Spider name to run')
+@click.option('--spider', '-s', help='Spider name to run (qiita, zenn, hateb)')
 @click.option('--all', 'run_all', is_flag=True, help='Run all spiders')
-def crawl(spider, run_all):
+@click.option('--test', is_flag=True, help='Run in test mode (limited items)')
+def crawl(spider, run_all, test):
     """Run scrapy spiders"""
+    test_args = []
+    if test:
+        test_args = ['-s', 'CLOSESPIDER_ITEMCOUNT=3', '-s', 'ITEM_PIPELINES={}']
+    
     if run_all:
         spiders = ['qiita', 'zenn', 'hateb']
         for spider_name in spiders:
             click.echo(f"Running spider: {spider_name}")
-            subprocess.run(['scrapy', 'crawl', spider_name])
+            cmd = ['scrapy', 'crawl', spider_name] + test_args
+            subprocess.run(cmd)
     elif spider:
+        if spider not in ['qiita', 'zenn', 'hateb']:
+            click.echo(f"Error: Unknown spider '{spider}'. Available: qiita, zenn, hateb")
+            return
         click.echo(f"Running spider: {spider}")
-        subprocess.run(['scrapy', 'crawl', spider])
+        cmd = ['scrapy', 'crawl', spider] + test_args
+        subprocess.run(cmd)
     else:
-        click.echo("Please specify a spider with -s or use --all")
+        click.echo("Available spiders: qiita, zenn, hateb")
+        click.echo("Use: python -m engineed.cli crawl -s <spider_name>")
+        click.echo("Or:  python -m engineed.cli crawl --all")
 
 @main.command()
 def init_db():

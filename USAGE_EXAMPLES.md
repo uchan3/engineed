@@ -2,19 +2,30 @@
 
 ## スパイダーの基本実行
 
+### 利用可能なスパイダー
+- **qiita**: Qiitaの技術記事を収集
+- **zenn**: Zennの技術記事を収集  
+- **hateb**: はてなブックマーク（テクノロジー）経由の記事を収集
+
 ### 1. Scrapyコマンド直接実行
 ```bash
 # 利用可能なスパイダーを確認
 scrapy list
 
-# Qiitaスパイダーを実行（パイプライン有効）
+# 各スパイダーを実行（パイプライン有効）
 scrapy crawl qiita
+scrapy crawl zenn
+scrapy crawl hateb
 
 # パイプライン無効でテスト実行
 scrapy crawl qiita -s ITEM_PIPELINES="{}"
+scrapy crawl zenn -s ITEM_PIPELINES="{}"
+scrapy crawl hateb -s ITEM_PIPELINES="{}"
 
 # 記事数制限付きでテスト実行
 scrapy crawl qiita -s CLOSESPIDER_ITEMCOUNT=5 -s ITEM_PIPELINES="{}"
+scrapy crawl zenn -s CLOSESPIDER_ITEMCOUNT=5 -s ITEM_PIPELINES="{}"
+scrapy crawl hateb -s CLOSESPIDER_ITEMCOUNT=5 -s ITEM_PIPELINES="{}"
 
 # ログレベル設定で実行
 scrapy crawl qiita -s LOG_LEVEL=INFO
@@ -27,9 +38,19 @@ python -m engineed.cli --help
 
 # 特定のスパイダー実行
 python -m engineed.cli crawl -s qiita
+python -m engineed.cli crawl -s zenn
+python -m engineed.cli crawl -s hateb
+
+# テストモードで実行（記事数制限）
+python -m engineed.cli crawl -s qiita --test
+python -m engineed.cli crawl -s zenn --test
+python -m engineed.cli crawl -s hateb --test
 
 # 全スパイダー実行
 python -m engineed.cli crawl --all
+
+# 全スパイダーをテストモードで実行
+python -m engineed.cli crawl --all --test
 
 # データベース初期化
 python -m engineed.cli init-db
