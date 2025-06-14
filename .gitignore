@@ -127,4 +127,5 @@ data/
 logs/
 httpcache/
 *.db
-test_*.py
+.env
+.env.local
