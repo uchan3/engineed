@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} - Engineed{% endblock %}
+
+{% block content %}
+<div class="container">
+    <header class="page-header">
+        <h1><i class="fas fa-chart-bar"></i> {{ page_title }}</h1>
+        <p class="subtitle">システム統計とアナリティクス</p>
+    </header>
+
+    {% if error %}
+    <div class="error-message">
+        <i class="fas fa-exclamation-triangle"></i>
+        エラー: {{ error }}
+    </div>
+    {% endif %}
+
+    {% if stats %}
+    <div class="stats-container">
+        <!-- 基本統計 -->
+        <div class="stats-section">
+            <h2><i class="fas fa-info-circle"></i> 基本統計</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number">{{ stats.total_articles or 0 }}</div>
+                        <div class="stat-label">総記事数</div>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-tags"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number">{{ stats.total_tags or 0 }}</div>
+                        <div class="stat-label">総タグ数</div>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-globe"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number">{{ stats.sources|length if stats.sources else 0 }}</div>
+                        <div class="stat-label">ソースサイト数</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ソース別統計 -->
+        {% if stats.sources %}
+        <div class="stats-section">
+            <h2><i class="fas fa-chart-pie"></i> ソース別記事数</h2>
+            <div class="sources-grid">
+                {% for source, count in stats.sources %}
+                <div class="source-card">
+                    <div class="source-header">
+                        <h3 class="source-name">
+                            {% if source == 'qiita' %}
+                            <i class="fas fa-code"></i> Qiita
+                            {% elif source == 'zenn' %}
+                            <i class="fas fa-bookmark"></i> Zenn
+                            {% elif source == 'hateb' %}
+                            <i class="fas fa-star"></i> はてなブックマーク
+                            {% else %}
+                            <i class="fas fa-globe"></i> {{ source }}
+                            {% endif %}
+                        </h3>
+                    </div>
+                    <div class="source-stats">
+                        <div class="count-display">
+                            <span class="count-number">{{ count }}</span>
+                            <span class="count-label">記事</span>
+                        </div>
+                        <div class="percentage">
+                            {% set total = stats.total_articles or 1 %}
+                            {{ "%.1f"|format((count / total * 100) if total > 0 else 0) }}%
+                        </div>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: {{ (count / (stats.total_articles or 1) * 100) if stats.total_articles else 0 }}%"></div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- 最近の活動 -->
+        <div class="stats-section">
+            <h2><i class="fas fa-clock"></i> 最近の活動</h2>
+            <div class="activity-info">
+                <div class="info-card">
+                    <i class="fas fa-info-circle"></i>
+                    <div>
+                        <h4>スクレイピング状況</h4>
+                        <p>最新の記事収集状況を確認するには、CLI statusコマンドを実行してください。</p>
+                        <code>python -m engineed.cli status</code>
+                    </div>
+                </div>
+                <div class="info-card">
+                    <i class="fas fa-refresh"></i>
+                    <div>
+                        <h4>記事更新</h4>
+                        <p>新しい記事を収集するには、スクレイピングを実行してください。</p>
+                        <code>python -m engineed.cli crawl --all</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-chart-bar"></i>
+        <h3>統計データがありません</h3>
+        <p>記事を収集すると統計情報が表示されます。</p>
+        <div class="action-buttons">
+            <a href="/" class="btn btn-primary">ホームに戻る</a>
+            <a href="/tags" class="btn btn-secondary">タグを見る</a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.stats-container {
+    margin-top: 2rem;
+}
+
+.stats-section {
+    margin-bottom: 3rem;
+}
+
+.stats-section h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    color: #333;
+    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 0.5rem;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.stat-icon {
+    font-size: 2rem;
+    color: #007bff;
+    background: #e3f2fd;
+    padding: 1rem;
+    border-radius: 50%;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #333;
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+}
+
+.sources-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.source-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.source-header {
+    margin-bottom: 1rem;
+}
+
+.source-name {
+    font-size: 1.1rem;
+    margin: 0;
+    color: #333;
+}
+
+.source-stats {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.count-display {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+}
+
+.count-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #333;
+}
+
+.count-label {
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+.percentage {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #28a745;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background-color: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #007bff, #0056b3);
+    transition: width 0.3s ease;
+}
+
+.activity-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.info-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    display: flex;
+    gap: 1rem;
+}
+
+.info-card i {
+    font-size: 1.5rem;
+    color: #17a2b8;
+    margin-top: 0.25rem;
+}
+
+.info-card h4 {
+    margin: 0 0 0.5rem 0;
+    color: #333;
+}
+
+.info-card p {
+    margin: 0 0 0.5rem 0;
+    color: #6c757d;
+    line-height: 1.5;
+}
+
+.info-card code {
+    background: #f8f9fa;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    color: #d63384;
+}
+</style>
+{% endblock %}
